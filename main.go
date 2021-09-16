@@ -9,11 +9,14 @@ import (
 	"os/signal"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
 	listenAddress = flag.String("web.listen-address", ":9104", "Address to listen on for web interface and telemetry.")
 	metricPath    = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
+	certPath      = flag.String("tls.server-crt", "", "Path to PEM encoded file containing TLS server cert.")
+	keyPath       = flag.String("tls.server-key", "", "Path to PEM encoded file containing TLS server key (unencyrpted).")
 )
 
 func main() {
@@ -38,7 +41,7 @@ func main() {
 	}()
 
 	prometheus.MustRegister(exporter)
-	http.Handle(*metricPath, prometheus.Handler())
+	http.Handle(*metricPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 <head><title>Rsyslog exporter</title></head>
@@ -50,6 +53,13 @@ func main() {
 `))
 	})
 
-	log.Printf("Listening on %s", *listenAddress)
-	log.Fatal(http.ListenAndServe(*listenAddress, nil))
+	if *certPath == "" && *keyPath == "" {
+		log.Printf("Listening on %s", *listenAddress)
+		log.Fatal(http.ListenAndServe(*listenAddress, nil))
+	} else if *certPath == "" || *keyPath == "" {
+		log.Fatal("Both tls.server-crt and tls.server-key must be specified")
+	} else {
+		log.Printf("Listening for TLS on %s", *listenAddress)
+		log.Fatal(http.ListenAndServeTLS(*listenAddress, *certPath, *keyPath, nil))
+	}
 }

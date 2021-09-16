@@ -5,6 +5,8 @@ A [prometheus](http://prometheus.io/) exporter for [rsyslog](http://rsyslog.com)
 ## Rsyslog Configuration
 Configure rsyslog to push JSON formatted stats via omprog:
 ```
+module(load="omprog")
+
 module(
   load="impstats"
   interval="10"
@@ -17,15 +19,27 @@ ruleset(name="process_stats") {
   action(
     type="omprog"
     name="to_exporter"
-    binary="/usr/local/bin/rsyslog_exporter"
+    binary="/usr/local/bin/rsyslog_exporter [--tls.server-crt=/path/to/tls.crt --tls.server-key=/path/to/tls.key]"
   )
 }
 ```
 
 The exporter itself logs back via syslog, this cannot be configured at the moment.
 
+## Command Line Switches
+* `web.listen-address` - default `:9104` - port to listen to (NOTE: the leading
+  `:` is required for `http.ListenAndServe`)
+* `web.telemetry-path` - default `/metrics` - path from which to serve Prometheus metrics
+* `tls.server-crt` - default `""` - PEM encoded file containing the server certificate and
+  the CA certificate for use with `http.ListenAndServeTLS`
+* `tls.server-key` - default `""` - PEM encoded file containing the unencrypted
+  server key for use with `tls.server-crt`
+
+If you want the exporter to listen for TLS (`https`) you must specify both
+`tls.server-crt` and `tls.server-key`.
+
 ## Provided Metrics
-The following metrics provided by the rsyslog impstats module are tracked by rsyslog_exporter:
+The following metrics provided by the rsyslog [impstats](https://www.rsyslog.com/doc/master/configuration/modules/impstats.html) module are tracked by rsyslog_exporter:
 
 ### Actions
 Action objects describe what is to be done with a message, and are implemented via output modules.
@@ -68,4 +82,33 @@ Rsyslog tracks how it uses system resources and provides the following metrics:
 * nvcsw - number of voluntary context switches
 * nivcsw - number of involuntary context switches
 
+### Dynafile Cache
+The [omfile](https://www.rsyslog.com/rsyslog-statistic-counter-plugin-omfile/) module can generate
+file names from a template.  A cache of recent filehandles can be maintained, whose sizing can
+impact performance considerably.  The module provides the following metrics:
 
+* requests - number of requests made to obtain a dynafile
+* level0 - number of requests for the current active file
+* missed - number of cache misses
+* evicted - number of times a file needed to be evicted from cache
+* maxused - maximum number of cache entries ever used
+* closetimeouts - number of times a file was closed due to timeout settings
+
+### Dynamic Stats
+Rsyslog allows the user to define their own stats namespaces and increment counters within these
+buckets using Rainerscript function calls.
+
+These are exported as counters with the metric name identifying the bucket, and a label value
+matching the name of the counter (the label name will always be "counter").  As well as custom
+metrics, a "global" dynstats namespace is also published with some additional bookeeping counters.
+
+See the [dyn_stats](https://www.rsyslog.com/doc/master/configuration/dyn_stats.html)
+documentation for more information.
+
+### IMUDP Workerthread stats
+The [imudp](https://www.rsyslog.com/rsyslog-statistic-counter-plugin-imudp/) module can be configured
+to run on multiple worker threads and the following metrics are returned:
+
+* input_called_recvmmsg - Number of recvmmsg called
+* input_called_recvmsg -Number of recvmmsg called
+* input_received - Messages received

@@ -230,6 +230,34 @@ func TestHandleLineWithGlobal(t *testing.T) {
 	testHelper(t, log, tests)
 }
 
+func TestHandleLineWithDynafileCache(t *testing.T) {
+	tests := []*testUnit{
+		&testUnit{
+			Name:       "dynafile_cache_requests",
+			Val:        412044,
+			LabelValue: "cluster",
+		},
+		&testUnit{
+			Name:       "dynafile_cache_level0",
+			Val:        294002,
+			LabelValue: "cluster",
+		},
+		&testUnit{
+			Name:       "dynafile_cache_missed",
+			Val:        210,
+			LabelValue: "cluster",
+		},
+		&testUnit{
+			Name:       "dynafile_cache_evicted",
+			Val:        14,
+			LabelValue: "cluster",
+		},
+	}
+
+	dynafileCacheLog := []byte(`2019-07-03T17:04:01.312432+00:00 some-node.example.org rsyslogd-pstats: { "name": "dynafile cache cluster", "origin": "omfile", "requests": 412044, "level0": 294002, "missed": 210, "evicted": 14, "maxused": 100, "closetimeouts": 0 }`)
+	testHelper(t, dynafileCacheLog, tests)
+}
+
 func TestHandleUnknown(t *testing.T) {
 	unknownLog := []byte(`2017-08-30T08:10:04.786350+00:00 some-node.example.org rsyslogd-pstats: {"a":"b"}`)
 

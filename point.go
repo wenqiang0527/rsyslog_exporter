@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,11 +11,6 @@ type pointType int
 const (
 	counter pointType = iota
 	gauge
-)
-
-var (
-	ErrIncompatiblePointType = errors.New("incompatible point type")
-	ErrUnknownPointType      = errors.New("unknown point type")
 )
 
 type point struct {

@@ -86,7 +86,7 @@ func TestPointStore(t *testing.T) {
 	}
 
 	_, err = ps.get("no point")
-	if err != ErrPointNotFound {
+	if err != errPointNotFound {
 		t.Error("getting non existent point should raise error")
 	}
 }

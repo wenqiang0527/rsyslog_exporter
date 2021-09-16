@@ -20,6 +20,8 @@ const (
 	rsyslogQueue
 	rsyslogResource
 	rsyslogDynStat
+	rsyslogDynafileCache
+	rsyslogInputIMDUP
 )
 
 type rsyslogExporter struct {
@@ -68,6 +70,15 @@ func (re *rsyslogExporter) handleStatLine(rawbuf []byte) error {
 			re.set(p)
 		}
 
+	case rsyslogInputIMDUP:
+		u, err := newInputIMUDPFromJSON(buf)
+		if err != nil {
+			return err
+		}
+		for _, p := range u.toPoints() {
+			re.set(p)
+		}
+
 	case rsyslogQueue:
 		q, err := newQueueFromJSON(buf)
 		if err != nil {
@@ -91,6 +102,14 @@ func (re *rsyslogExporter) handleStatLine(rawbuf []byte) error {
 			return err
 		}
 		for _, p := range s.toPoints() {
+			re.set(p)
+		}
+	case rsyslogDynafileCache:
+		d, err := newDynafileCacheFromJSON(buf)
+		if err != nil {
+			return err
+		}
+		for _, p := range d.toPoints() {
 			re.set(p)
 		}
 

@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	ErrPointNotFound = errors.New("point does not exist")
+	errPointNotFound = errors.New("point does not exist")
 )
 
 type pointStore struct {
@@ -25,7 +25,7 @@ func newPointStore() *pointStore {
 func (ps *pointStore) keys() []string {
 	ps.lock.Lock()
 	keys := make([]string, 0)
-	for k, _ := range ps.pointMap {
+	for k := range ps.pointMap {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
@@ -48,5 +48,5 @@ func (ps *pointStore) get(name string) (*point, error) {
 		return p, nil
 	}
 	ps.lock.Unlock()
-	return &point{}, ErrPointNotFound
+	return &point{}, errPointNotFound
 }
